@@ -1,4 +1,3 @@
-
 package cmd
 
 import (
@@ -60,7 +59,6 @@ func (m *Manager) Register(command Command) {
 	m.Commands[name] = command
 }
 
-
 func (m *Manager) Run(args []string) {
 	var status int
 	if len(args) == 0 {
@@ -75,7 +73,9 @@ func (m *Manager) Run(args []string) {
 	}
 	args = args[1:]
 	info := command.Info()
+
 	if flagged, ok := command.(FlaggedCommand); ok {
+
 		flagset := flagged.Flags()
 		err := flagset.Parse(true, args)
 		if err != nil {
@@ -83,8 +83,10 @@ func (m *Manager) Run(args []string) {
 			m.finisher().Exit(1)
 			return
 		}
+
 		args = flagset.Args()
 	}
+
 	if length := len(args); (length < info.MinArgs || (info.MaxArgs > 0 && length > info.MaxArgs)) &&
 		name != "help" {
 		m.wrong = true
@@ -94,10 +96,9 @@ func (m *Manager) Run(args []string) {
 		status = 1
 	}
 	context := Context{args, m.stdout, m.stderr, m.stdin}
-	
 
 	err := command.Run(&context)
-	
+
 	if err != nil {
 		re := regexp.MustCompile(`^((Invalid token)|(You must provide the Authorization header))`)
 		errorMsg := err.Error()

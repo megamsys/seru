@@ -15,7 +15,7 @@ func (s *S) TestCommandsFromBaseManagerAreRegistered(c *gocheck.C) {
 	}
 }
 
-func (s *S) TestNewSubdomainIsRegistered(c *gocheck.C) {
+/*func (s *S) TestNewSubdomainIsRegistered(c *gocheck.C) {
 	manager := buildManager("megam")
 	create, ok := manager.Commands["create"]
 	c.Assert(ok, gocheck.Equals, true)
@@ -27,4 +27,4 @@ func (s *S) TestDeleteSubdomainIsRegistered(c *gocheck.C) {
 	remove, ok := manager.Commands["delete"]
 	c.Assert(ok, gocheck.Equals, true)
 	c.Assert(remove, gocheck.FitsTypeOf, &DeleteSubdomain{})
-}
+}*/

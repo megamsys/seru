@@ -10,10 +10,9 @@ func (s *S) TestNewSubdomainInfo(c *gocheck.C) {
 
 	expected := &cmd.Info{
 		Name:    "create",	
-		Usage:    `seru create -A <aws_accesskey> -K <aws_secretid> -d <domain name, default:megam.co> 
-		-s <subdomain> `,	
+		Usage:   `create -a <accesskey> -s <secretid> -d <domain name, default:megam.co> -u <subdomain> -i <ipaddress>`,
 		Desc:    desc,
-		MinArgs: 4,
+		MinArgs: 0,
 	}
 	command := NewSubdomain{}
 	c.Assert(command.Info(), gocheck.DeepEquals, expected)
@@ -25,12 +24,13 @@ func (s *S) TestDeleteSubdomainInfo(c *gocheck.C) {
 	
 	expected := &cmd.Info{
 		Name:    "delete",
-		Usage:    `seru delete -A <aws_accesskey> -K <aws_secretid> -d <domain name, default:megam.co> 
-		-s <subdomain> `,		
+		Usage:   `delete -a <accesskey> -s <secretid> -d <domain name, default:megam.co> -s <subdomain>`,
 		Desc:    desc,
-		MinArgs: 4,
+		MinArgs: 0,
 	}
 	command := DeleteSubdomain{}
 	c.Assert(command.Info(), gocheck.DeepEquals, expected)
 }
+
+
 
