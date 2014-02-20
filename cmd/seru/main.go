@@ -27,6 +27,7 @@ const (
 
 func buildManager(name string) *cmd.Manager {
 	m := cmd.BuildBaseManager(name, version, header)
+	m.Register(&Listdomain{}) //route53 list zones
 	m.Register(&NewSubdomain{}) //route53 create CNAME
 	m.Register(&DeleteSubdomain{})  //route53 delete CNAME
 	return m

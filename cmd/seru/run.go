@@ -1,13 +1,54 @@
 package main
 
 import (
-	"github.com/karlentwistle/route53"
+	"fmt"
 	"github.com/indykish/seru/cmd"
+	"github.com/karlentwistle/route53"
 	"launchpad.net/gnuflag"
 	"log"
-	"fmt"
 	"os"
 )
+
+type Listdomain struct {
+	fs        *gnuflag.FlagSet
+	accesskey string
+	secretid  string
+}
+
+func (l *Listdomain) Info() *cmd.Info {
+	desc := `lists the domains in the DNS service.`
+	return &cmd.Info{
+		Name:    "list",
+		Usage:   `list -a <accesskey> -s <secretid>`,
+		Desc:    desc,
+		MinArgs: 0,
+	}
+}
+
+func (l *Listdomain) Run(context *cmd.Context) error {
+	aws := auth(l.accesskey, l.secretid)
+	zones := aws.Zones().HostedZones
+	
+	table := cmd.NewTable()
+	table.Headers = cmd.Row([]string{"Id", "Name"})
+	for _, zone := range zones {		
+		table.AddRow(cmd.Row([]string{zone.Id, zone.Name}))
+	}
+	table.Sort()
+	context.Stdout.Write(table.Bytes())	
+	return nil
+}
+
+func (l *Listdomain) Flags() *gnuflag.FlagSet {
+	if l.fs == nil {
+		l.fs = gnuflag.NewFlagSet("dnsasslist", gnuflag.ExitOnError)
+		l.fs.StringVar(&l.accesskey, "accesskey", "", "accesskey: AWS Accesskey")
+		l.fs.StringVar(&l.accesskey, "a", "", "accesskey: AWS Accesskey")
+		l.fs.StringVar(&l.secretid, "secretid", "", "secretid: AWS Secretid")
+		l.fs.StringVar(&l.secretid, "s", "", "secretid: AWS Secretid")
+	}
+	return l.fs
+}
 
 type NewSubdomain struct {
 	fs        *gnuflag.FlagSet
@@ -30,7 +71,7 @@ func (c *NewSubdomain) Info() *cmd.Info {
 
 func (c *NewSubdomain) Run(context *cmd.Context) error {
 	aws := auth(c.accesskey, c.secretid)
-	zone := findZone(aws.Zones(),c.domain)
+	zone := findZone(aws.Zones(), c.domain)
 	resourceRecordSets, err := zone.ResourceRecordSets(aws)
 
 	if err != nil {
@@ -61,7 +102,7 @@ func (c *NewSubdomain) Run(context *cmd.Context) error {
 
 func (c *NewSubdomain) Flags() *gnuflag.FlagSet {
 	if c.fs == nil {
-		c.fs = gnuflag.NewFlagSet("dnsass", gnuflag.ExitOnError)
+		c.fs = gnuflag.NewFlagSet("dnsassnew", gnuflag.ExitOnError)
 		c.fs.StringVar(&c.accesskey, "accesskey", "", "accesskey: AWS Accesskey")
 		c.fs.StringVar(&c.accesskey, "a", "", "accesskey: AWS Accesskey")
 		c.fs.StringVar(&c.secretid, "secretid", "", "secretid: AWS Secretid")
@@ -70,14 +111,15 @@ func (c *NewSubdomain) Flags() *gnuflag.FlagSet {
 		c.fs.StringVar(&c.subdomain, "u", "", "subdomain: subdomain name")
 		c.fs.StringVar(&c.domain, "domain", "megam.co", "domain: domain name, this needs to preexist in the DNS service. Default : megam.co")
 		c.fs.StringVar(&c.domain, "d", "megam.co", "domain: domain name, this needs to preexist in the DNS service")
-		c.fs.StringVar(&c.domain, "ipaddress", "", "ipaddress: ipaddress of the running server")
-		c.fs.StringVar(&c.domain, "i", "", "ipaddress: ipaddress of the running server")
+		c.fs.StringVar(&c.ip, "ipaddress", "", "ipaddress: ipaddress of the running server")
+		c.fs.StringVar(&c.ip, "i", "", "ipaddress: ipaddress of the running server")
 	}
 	return c.fs
 }
 
 type DeleteSubdomain struct {
 	fs        *gnuflag.FlagSet
+	yes       bool
 	accesskey string
 	secretid  string
 	domain    string
@@ -95,12 +137,38 @@ func (g *DeleteSubdomain) Info() *cmd.Info {
 }
 
 func (c *DeleteSubdomain) Run(context *cmd.Context) error {
+	aws := auth(c.accesskey, c.secretid)
+	zone := findZone(aws.Zones(), c.domain)
+	resourceRecordSets, err := zone.ResourceRecordSets(aws)
+
+	if err != nil {
+		log.Fatal("Resource Record Sets Invalid:", resourceRecordSets, err)
+	}
+
+	record := findRecord(resourceRecordSets, c.subdomain, c.domain)
+
+	if record.Name == "" {
+		fmt.Println("A record not found with name ", c.subdomain+"."+c.domain)
+		os.Exit(1)
+	}
+
+	var answer string
+	if !c.yes {
+		fmt.Fprintf(context.Stdout, `Are you sure you want to remove "%s"? (y/n) `, c.subdomain+"."+c.domain)
+		fmt.Fscanf(context.Stdin, "%s", &answer)
+		if answer != "y" {
+			fmt.Fprintln(context.Stdout, "Abort.")
+			return nil
+		}
+	}
+	updateRecord(zone, aws, "DELETE", c.subdomain+"."+c.domain, record.Value[0])
+	fmt.Println("Done")
 	return nil
 }
 
 func (c *DeleteSubdomain) Flags() *gnuflag.FlagSet {
 	if c.fs == nil {
-		c.fs = gnuflag.NewFlagSet("dnsass", gnuflag.ExitOnError)
+		c.fs = gnuflag.NewFlagSet("dnsassdel", gnuflag.ExitOnError)
 		c.fs.StringVar(&c.accesskey, "accesskey", "", "accesskey: AWS Accesskey")
 		c.fs.StringVar(&c.accesskey, "a", "", "accesskey: AWS Accesskey")
 		c.fs.StringVar(&c.secretid, "secretid", "", "secretid: AWS Secretid")
@@ -109,11 +177,13 @@ func (c *DeleteSubdomain) Flags() *gnuflag.FlagSet {
 		c.fs.StringVar(&c.subdomain, "u", "", "subdomain: subdomain name")
 		c.fs.StringVar(&c.domain, "domain", "megam.co", "domain: domain name, this needs to preexist in the DNS service. Default : megam.co")
 		c.fs.StringVar(&c.domain, "d", "megam.co", "domain: domain name, this needs to preexist in the DNS service")
+		c.fs.BoolVar(&c.yes, "assume-yes", false, "Don't ask for confirmation, just remove the subdomain.")
+		c.fs.BoolVar(&c.yes, "y", false, "Don't ask for confirmation, just remove the subdomain.")
 	}
 	return c.fs
 }
 
-func auth(accesskey string, secretkey string) (route53.AccessIdentifiers) {
+func auth(accesskey string, secretkey string) route53.AccessIdentifiers {
 	return route53.AccessIdentifiers{
 		AccessKey: accesskey,
 		SecretKey: secretkey,
