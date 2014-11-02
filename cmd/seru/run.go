@@ -83,14 +83,14 @@ func (c *NewSubdomain) Run(context *cmd.Context) error {
 	if record.Name == "" {
 		updateRecord(zone, aws, "CREATE", c.subdomain+"."+c.domain, c.ip)
 		fmt.Println("Created A record with name ", c.subdomain)
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	fmt.Println("IP was " + record.Value[0])
 
 	if len(record.Value[0]) > 0 {
 		fmt.Println("Nothing to do")
-		os.Exit(1)
+		os.Exit(0)
 	}
 
 	fmt.Println("Updating IP with Route53")
