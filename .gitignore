@@ -2,10 +2,12 @@
 *.o
 *.a
 *.so
+seru
 
 # Folders
 _obj
 _test
+Godeps/_workspace
 
 # Architecture specific extensions/prefixes
 *.[568vq]
@@ -18,5 +20,6 @@ _cgo_gotypes.go
 _cgo_export.*
 
 _testmain.go
+*.tar.gz
 
 *.exe

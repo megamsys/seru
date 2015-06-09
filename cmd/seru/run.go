@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"github.com/indykish/seru/cmd"
+	"github.com/megamsys/seru/cmd"
 	"github.com/karlentwistle/route53"
 	"launchpad.net/gnuflag"
 	"log"
