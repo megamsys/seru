@@ -2,7 +2,8 @@ package cmd
 
 import (
 	"bytes"
-	"launchpad.net/gocheck"
+	"gopkg.in/check.v1
+"
 	"os"
 	"testing"
 )

@@ -2,8 +2,9 @@ package main
 
 import (
 	"bytes"
-	"github.com/indykish/seru/cmd"
-	"launchpad.net/gocheck"
+	"github.com/megamsys/seru/cmd"
+	"gopkg.in/check.v1
+"
 	"os"
 	"testing"
 )

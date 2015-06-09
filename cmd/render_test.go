@@ -1,7 +1,8 @@
 package cmd
 
 import (
-	"launchpad.net/gocheck"
+	"gopkg.in/check.v1
+"
 	"sort"
 )
 

@@ -1,8 +1,9 @@
 package main
 
 import (
-	"github.com/indykish/seru/cmd"
-	"launchpad.net/gocheck"
+	"github.com/megamsys/seru/cmd"
+	"gopkg.in/check.v1
+"
 )
 
 func (s *S) TestNewSubdomainInfo(c *gocheck.C) {

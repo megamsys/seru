@@ -16,7 +16,7 @@
 package main
 
 import (
-	"github.com/indykish/seru/cmd"
+	"github.com/megamsys/seru/cmd"
 	"os"
 )
 

@@ -1,4 +1,4 @@
-#Copyright (c) 2012 Megam Systems.
+#Copyright (c) 2014 Megam Systems.
 #
 #   Licensed under the Apache License, Version 2.0 (the "License");
 #   you may not use this file except in compliance with the License.
@@ -12,36 +12,36 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 ###############################################################################
-# Makefile to compile seru.
+# Makefile to compile cib.
 # lists all the dependencies for test, prod and we can run a go build aftermath.
 ###############################################################################
-                            
-
-SERUCODE_HOME = $(HOME)/code/megam/workspace/seru
-
-export GOPATH=$(SERUCODE_HOME)
+GOPATH  := $(GOPATH):$(shell pwd)/../../../../
 
 define HG_ERROR
 
-FATAL: you need mercurial (hg) to download seru dependencies.
+FATAL: you need mercurial (hg) to download megamd dependencies.
        Check README.md for details
+
+
 endef
 
 define GIT_ERROR
 
-FATAL: you need git to download seru dependencies.
+FATAL: you need git to download megamd dependencies.
        Check README.md for details
 endef
 
 define BZR_ERROR
 
-FATAL: you need bazaar (bzr) to download gulp dependencies.
+FATAL: you need bazaar (bzr) to download megamd dependencies.
        Check README.md for details
 endef
 
-.PHONY: all check-path get hg git bzr get-test get-prod test client
+.PHONY: all check-path get hg git bzr get-code test
 
 all: check-path get test
+
+build: check-path get _go_test _megamd
 
 # It does not support GOPATH with multiple paths.
 check-path:
@@ -51,19 +51,9 @@ ifndef GOPATH
 	@echo "       http://golang.org/cmd/go/#GOPATH_environment_variable"
 	@exit 1
 endif
+	@exit 0
 
-
-clean:
-	@/bin/rm -f -r $(SERUCODE_HOME)/pkg	
-	@go list -f '{{range .TestImports}}{{.}} {{end}}' ./... | tr ' ' '\n' |\
-		grep '^.*\..*/.*$$' | grep -v 'github.com/indykish/seru' |\
-		sort | uniq | xargs -I{} rm -f -r $(SERUCODE_HOME)/src/{}	
-	@go list -f '{{range .Imports}}{{.}} {{end}}' ./... | tr ' ' '\n' |\
-		grep '^.*\..*/.*$$' | grep -v 'github.com/indykish/seru' |\
-		sort | uniq | xargs -I{} rm -f -r $(SERUCODE_HOME)/src/{} 
-	@/bin/echo "Clean ...ok"
-
-get: hg git bzr get-test get-prod
+get: hg git bzr get-code godep
 
 hg:
 	$(if $(shell hg), , $(error $(HG_ERROR)))
@@ -74,28 +64,29 @@ git:
 bzr:
 	$(if $(shell bzr), , $(error $(BZR_ERROR)))
 
-get-test:
-	@/bin/echo -n "Installing test dependencies... "
-	@go list -f '{{range .TestImports}}{{.}} {{end}}' ./... | tr ' ' '\n' |\
-		grep '^.*\..*/.*$$' | grep -v 'github.com/indykish/seru' |\
-		sort | uniq | xargs go get -u >/tmp/.get-test 2>&1 || (cat /tmp/.get-test && exit 1)	
-	@/bin/echo "ok"
-	@rm -f /tmp/.get-test
+get-code:
+	go get $(GO_EXTRAFLAGS) -u -d  ./...
 
-get-prod:
-	@/bin/echo -n "Installing production dependencies... "
-	@go list -f '{{range .Imports}}{{.}} {{end}}' ./... | tr ' ' '\n' |\
-		grep '^.*\..*/.*$$' | grep -v 'github.com/indykish/seru' |\
-		sort | uniq | xargs go get -u >/tmp/.get-prod 2>&1 || (cat /tmp/.get-prod && exit 1)
-	@/bin/echo "ok"
-	@rm -f /tmp/.get-prod
+godep:
+	go get $(GO_EXTRAFLAGS) github.com/tools/godep
+	godep restore ./...
 
 _go_test:
-	@go test -i ./...
-	@go test ./...
+	go clean $(GO_EXTRAFLAGS) ./...
+	go test $(GO_EXTRAFLAGS) ./...
 
-test: _go_test 
+_seru:
+	rm -f seru
+	go build $(GO_EXTRAFLAGS) -o seru ./cmd/seru
 
-client:
-	@go build -o seru ./cmd/seru
-	@echo "Done."
+_serur:
+	sudo ./seru start
+	rm -f seru
+
+test: _go_test _seru _serur
+
+_install_deadcode: git
+	go get $(GO_EXTRAFLAGS) github.com/remyoudompheng/go-misc/deadcode
+
+deadcode: _install_deadcode
+	@go list ./... | sed -e 's;github.com/megamsys/megamd/;;' | xargs deadcode

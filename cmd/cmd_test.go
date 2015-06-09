@@ -6,7 +6,8 @@ import (
 	"io"
 	"os"	
 	//	"launchpad.net/gnuflag"
-	"launchpad.net/gocheck"
+	"gopkg.in/check.v1
+"
 )
 
 type recordingExiter int
