@@ -2,10 +2,12 @@
 *.o
 *.a
 *.so
+seru
 
 # Folders
 _obj
 _test
+Godeps/_workspace
 
 # Architecture specific extensions/prefixes
 *.[568vq]
