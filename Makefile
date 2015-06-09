@@ -78,9 +78,10 @@ _go_test:
 _seru:
 	rm -f seru
 	go build $(GO_EXTRAFLAGS) -o seru ./cmd/seru
+	tar -cvf seru.tar.gz seru
 
 _serur:
-	sudo ./seru start
+	sudo ./seru
 	rm -f seru
 
 test: _go_test _seru _serur

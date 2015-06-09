@@ -4,10 +4,8 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"os"	
-	//	"launchpad.net/gnuflag"
-	"gopkg.in/check.v1
-"
+	"os"
+	"gopkg.in/check.v1"
 )
 
 type recordingExiter int
@@ -47,59 +45,59 @@ func (c *ErrorCommand) Run(context *Context) error {
 	return errors.New(c.msg)
 }
 
-func (s *S) TestRegister(c *gocheck.C) {
+func (s *S) TestRegister(c *check.C) {
 	manager.Register(&TestCommand{})
 	badCall := func() { manager.Register(&TestCommand{}) }
-	c.Assert(badCall, gocheck.PanicMatches, "command already registered: foo")
+	c.Assert(badCall, check.PanicMatches, "command already registered: foo")
 }
 
-func (s *S) TestManagerRunShouldWriteErrorsOnStderr(c *gocheck.C) {
+func (s *S) TestManagerRunShouldWriteErrorsOnStderr(c *check.C) {
 	manager.Register(&ErrorCommand{msg: "You are wrong\n"})
 	manager.Run([]string{"error"})
-	c.Assert(manager.stderr.(*bytes.Buffer).String(), gocheck.Equals, "Error: You are wrong\n")
+	c.Assert(manager.stderr.(*bytes.Buffer).String(), check.Equals, "Error: You are wrong\n")
 }
 
-func (s *S) TestRun(c *gocheck.C) {
+func (s *S) TestRun(c *check.C) {
 	manager.Register(&TestCommand{})
 	manager.Run([]string{"foo"})
-	c.Assert(manager.stdout.(*bytes.Buffer).String(), gocheck.Equals, "Running TestCommand")
+	c.Assert(manager.stdout.(*bytes.Buffer).String(), check.Equals, "Running TestCommand")
 }
 
 
 
-func (s *S) TestHelpCommandShouldBeRegisteredByDefault(c *gocheck.C) {
+func (s *S) TestHelpCommandShouldBeRegisteredByDefault(c *check.C) {
 	var stdout, stderr bytes.Buffer
 	m := NewManager("gulpd", "0.1", "", &stdout, &stderr, os.Stdin)
 	_, exists := m.Commands["help"]
-	c.Assert(exists, gocheck.Equals, true)
+	c.Assert(exists, check.Equals, true)
 }
 
-func (s *S) TestHelpReturnErrorIfTheGivenCommandDoesNotExist(c *gocheck.C) {
+func (s *S) TestHelpReturnErrorIfTheGivenCommandDoesNotExist(c *check.C) {
 	command := help{manager: manager}
 	context := Context{[]string{"someone-create"}, manager.stdout, manager.stderr, manager.stdin}
 	err := command.Run(&context)
-	c.Assert(err, gocheck.NotNil)
-	c.Assert(err, gocheck.ErrorMatches, `^command "someone-create" does not exist.$`)
+	c.Assert(err, check.NotNil)
+	c.Assert(err, check.ErrorMatches, `^command "someone-create" does not exist.$`)
 }
 
-func (s *S) TestVersion(c *gocheck.C) {
+func (s *S) TestVersion(c *check.C) {
 	var stdout, stderr bytes.Buffer
 	manager := NewManager("seru", "0.1", "", &stdout, &stderr, os.Stdin)
 	command := version{manager: manager}
 	context := Context{[]string{}, manager.stdout, manager.stderr, manager.stdin}
 	err := command.Run(&context)
-	c.Assert(err, gocheck.IsNil)
-	c.Assert(manager.stdout.(*bytes.Buffer).String(), gocheck.Equals, "seru version 0.1.\n")
+	c.Assert(err, check.IsNil)
+	c.Assert(manager.stdout.(*bytes.Buffer).String(), check.Equals, "seru version 0.1.\n")
 }
 
-func (s *S) TestVersionInfo(c *gocheck.C) {
+func (s *S) TestVersionInfo(c *check.C) {
 	expected := &Info{
 		Name:    "version",
 		MinArgs: 0,
 		Usage:   "version",
 		Desc:    "display the current version",
 	}
-	c.Assert((&version{}).Info(), gocheck.DeepEquals, expected)
+	c.Assert((&version{}).Info(), check.DeepEquals, expected)
 }
 
 type ArgCmd struct{}
@@ -118,7 +116,7 @@ func (cmd *ArgCmd) Run(ctx *Context) error {
 	return nil
 }
 
-func (s *S) TestRunWrongArgsNumberShouldRunsHelpAndReturnStatus1(c *gocheck.C) {
+func (s *S) TestRunWrongArgsNumberShouldRunsHelpAndReturnStatus1(c *check.C) {
 	expected := `seru version 0.1.
 
 ERROR: wrong number of arguments.
@@ -132,11 +130,11 @@ Maximum # of arguments: 2
 `
 	manager.Register(&ArgCmd{})
 	manager.Run([]string{"arg"})
-	c.Assert(manager.stdout.(*bytes.Buffer).String(), gocheck.Equals, expected)
-	c.Assert(manager.e.(*recordingExiter).value(), gocheck.Equals, 1)
+	c.Assert(manager.stdout.(*bytes.Buffer).String(), check.Equals, expected)
+	c.Assert(manager.e.(*recordingExiter).value(), check.Equals, 1)
 }
 
-func (s *S) TestHelpShouldReturnUsageWithTheCommandName(c *gocheck.C) {
+func (s *S) TestHelpShouldReturnUsageWithTheCommandName(c *check.C) {
 	expected := `gulpd version 0.1.
 
 Usage: gulpd foo
@@ -150,32 +148,32 @@ Foo do anything or nothing.
 	context := Context{[]string{"foo"}, manager.stdout, manager.stderr, manager.stdin}
 	command := help{manager: manager}
 	err := command.Run(&context)
-	c.Assert(err, gocheck.IsNil)
-	c.Assert(manager.stdout.(*bytes.Buffer).String(), gocheck.Equals, expected)
+	c.Assert(err, check.IsNil)
+	c.Assert(manager.stdout.(*bytes.Buffer).String(), check.Equals, expected)
 }
 
-func (s *S) TestExtractProgramNameWithAbsolutePath(c *gocheck.C) {
+func (s *S) TestExtractProgramNameWithAbsolutePath(c *check.C) {
 	got := ExtractProgramName("/home/ram/bin/gulpd")
-	c.Assert(got, gocheck.Equals, "gulpd")
+	c.Assert(got, check.Equals, "gulpd")
 }
 
-func (s *S) TestExtractProgramNameWithRelativePath(c *gocheck.C) {
+func (s *S) TestExtractProgramNameWithRelativePath(c *check.C) {
 	got := ExtractProgramName("./gulpd")
-	c.Assert(got, gocheck.Equals, "gulpd")
+	c.Assert(got, check.Equals, "gulpd")
 }
 
-func (s *S) TestExtractProgramNameWithinThePATH(c *gocheck.C) {
+func (s *S) TestExtractProgramNameWithinThePATH(c *check.C) {
 	got := ExtractProgramName("gulpd")
-	c.Assert(got, gocheck.Equals, "gulpd")
+	c.Assert(got, check.Equals, "gulpd")
 }
 
-func (s *S) TestFinisherReturnsOsExiterIfNotDefined(c *gocheck.C) {
+func (s *S) TestFinisherReturnsOsExiterIfNotDefined(c *check.C) {
 	m := Manager{}
-	c.Assert(m.finisher(), gocheck.FitsTypeOf, osExiter{})
+	c.Assert(m.finisher(), check.FitsTypeOf, osExiter{})
 }
 
-func (s *S) TestFinisherReturnTheDefinedE(c *gocheck.C) {
+func (s *S) TestFinisherReturnTheDefinedE(c *check.C) {
 	var exiter recordingExiter
 	m := Manager{e: &exiter}
-	c.Assert(m.finisher(), gocheck.FitsTypeOf, &exiter)
+	c.Assert(m.finisher(), check.FitsTypeOf, &exiter)
 }

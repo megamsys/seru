@@ -2,30 +2,29 @@ package main
 
 import (
 	"github.com/megamsys/seru/cmd"
-	"gopkg.in/check.v1
-"
+	"gopkg.in/check.v1"
 )
 
-func (s *S) TestCommandsFromBaseManagerAreRegistered(c *gocheck.C) {
+func (s *S) TestCommandsFromBaseManagerAreRegistered(c *check.C) {
 	baseManager := cmd.BuildBaseManager("megam", version, header)
 	manager := buildManager("megam")
 	for name, instance := range baseManager.Commands {
 		command, ok := manager.Commands[name]
-		c.Assert(ok, gocheck.Equals, true)
-		c.Assert(command, gocheck.FitsTypeOf, instance)
+		c.Assert(ok, check.Equals, true)
+		c.Assert(command, check.FitsTypeOf, instance)
 	}
 }
 
-/*func (s *S) TestNewSubdomainIsRegistered(c *gocheck.C) {
+/*func (s *S) TestNewSubdomainIsRegistered(c *check.C) {
 	manager := buildManager("megam")
 	create, ok := manager.Commands["create"]
-	c.Assert(ok, gocheck.Equals, true)
-	c.Assert(create, gocheck.FitsTypeOf, &NewSubdomain{})
+	c.Assert(ok, check.Equals, true)
+	c.Assert(create, check.FitsTypeOf, &NewSubdomain{})
 }
 
-func (s *S) TestDeleteSubdomainIsRegistered(c *gocheck.C) {
+func (s *S) TestDeleteSubdomainIsRegistered(c *check.C) {
 	manager := buildManager("megam")
 	remove, ok := manager.Commands["delete"]
-	c.Assert(ok, gocheck.Equals, true)
-	c.Assert(remove, gocheck.FitsTypeOf, &DeleteSubdomain{})
+	c.Assert(ok, check.Equals, true)
+	c.Assert(remove, check.FitsTypeOf, &DeleteSubdomain{})
 }*/
