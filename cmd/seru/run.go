@@ -51,12 +51,12 @@ func (l *Listdomain) Flags() *gnuflag.FlagSet {
 }
 
 type NewSubdomain struct {
-	fs        *gnuflag.FlagSet
-	accesskey string
-	secretid  string
-	domain    string
-	subdomain string
-	ip        string
+	Fs        *gnuflag.FlagSet
+	Accesskey string
+	Secretid  string
+	Domain    string
+	Subdomain string
+	Ip        string
 }
 
 func (c *NewSubdomain) Info() *cmd.Info {
@@ -70,19 +70,20 @@ func (c *NewSubdomain) Info() *cmd.Info {
 }
 
 func (c *NewSubdomain) Run(context *cmd.Context) error {
-	aws := auth(c.accesskey, c.secretid)
-	zone := findZone(aws.Zones(), c.domain)
+	aws := auth(c.Accesskey, c.Secretid)
+	zone := findZone(aws.Zones(), c.Domain)
+		
 	resourceRecordSets, err := zone.ResourceRecordSets(aws)
 
 	if err != nil {
 		log.Fatal("Resource Record Sets Invalid:", resourceRecordSets, err)
 	}
 
-	record := findRecord(resourceRecordSets, c.subdomain, c.domain)
+	record := findRecord(resourceRecordSets, c.Subdomain, c.Domain)
 
 	if record.Name == "" {
-		updateRecord(zone, aws, "CREATE", c.subdomain+"."+c.domain, c.ip)
-		fmt.Println("Created A record with name ", c.subdomain)
+		updateRecord(zone, aws, "CREATE", c.Subdomain+"."+c.Domain, c.Ip)
+		fmt.Println("Created A record with name ", c.Subdomain)
 		os.Exit(0)
 	}
 
@@ -94,27 +95,68 @@ func (c *NewSubdomain) Run(context *cmd.Context) error {
 	}
 
 	fmt.Println("Updating IP with Route53")
-	updateRecord(zone, aws, "DELETE", c.subdomain+"."+c.domain, record.Value[0])
-	updateRecord(zone, aws, "CREATE", c.subdomain+"."+c.domain, c.ip)
+	updateRecord(zone, aws, "DELETE", c.Subdomain+"."+c.Domain, record.Value[0])
+	updateRecord(zone, aws, "CREATE", c.Subdomain+"."+c.Domain, c.Ip)
+	fmt.Println("Done")
+	return nil
+}
+
+func (c *NewSubdomain) ApiRun(context *cmd.Context) error {
+	aws := auth(c.Accesskey, c.Secretid)
+	zone := findZone(aws.Zones(), c.Domain)
+		
+	resourceRecordSets, err := zone.ResourceRecordSets(aws)
+
+	if err != nil {
+		log.Fatal("Resource Record Sets Invalid:", resourceRecordSets, err)
+	}
+
+	record := findRecord(resourceRecordSets, c.Subdomain, c.Domain)
+
+	if record.Name == "" {
+		err := updateRecord(zone, aws, "CREATE", c.Subdomain+"."+c.Domain, c.Ip)
+		if err != nil {
+	   		return err
+		}
+		fmt.Println("Created A record with name ", c.Subdomain)
+		return nil
+	}
+
+	fmt.Println("IP was " + record.Value[0])
+
+	if len(record.Value[0]) > 0 {
+		fmt.Println("Nothing to do")
+		return nil
+	}
+
+	fmt.Println("Updating IP with Route53")
+	del_err := updateRecord(zone, aws, "DELETE", c.Subdomain+"."+c.Domain, record.Value[0])
+	if del_err != nil {
+	   return del_err
+	}
+	crt_err := updateRecord(zone, aws, "CREATE", c.Subdomain+"."+c.Domain, c.Ip)
+	if crt_err != nil {
+	   return crt_err
+	}
 	fmt.Println("Done")
 	return nil
 }
 
 func (c *NewSubdomain) Flags() *gnuflag.FlagSet {
-	if c.fs == nil {
-		c.fs = gnuflag.NewFlagSet("dnsassnew", gnuflag.ExitOnError)
-		c.fs.StringVar(&c.accesskey, "accesskey", "", "accesskey: AWS Accesskey")
-		c.fs.StringVar(&c.accesskey, "a", "", "accesskey: AWS Accesskey")
-		c.fs.StringVar(&c.secretid, "secretid", "", "secretid: AWS Secretid")
-		c.fs.StringVar(&c.secretid, "s", "", "secretid: AWS Secretid")
-		c.fs.StringVar(&c.subdomain, "subdomain", "", "subdomain: subdomain name")
-		c.fs.StringVar(&c.subdomain, "u", "", "subdomain: subdomain name")
-		c.fs.StringVar(&c.domain, "domain", "megam.co", "domain: domain name, this needs to preexist in the DNS service. Default : megam.co")
-		c.fs.StringVar(&c.domain, "d", "megam.co", "domain: domain name, this needs to preexist in the DNS service")
-		c.fs.StringVar(&c.ip, "ipaddress", "", "ipaddress: ipaddress of the running server")
-		c.fs.StringVar(&c.ip, "i", "", "ipaddress: ipaddress of the running server")
+	if c.Fs == nil {
+		c.Fs = gnuflag.NewFlagSet("dnsassnew", gnuflag.ExitOnError)
+		c.Fs.StringVar(&c.Accesskey, "accesskey", "", "accesskey: AWS Accesskey")
+		c.Fs.StringVar(&c.Accesskey, "a", "", "accesskey: AWS Accesskey")
+		c.Fs.StringVar(&c.Secretid, "secretid", "", "secretid: AWS Secretid")
+		c.Fs.StringVar(&c.Secretid, "s", "", "secretid: AWS Secretid")
+		c.Fs.StringVar(&c.Subdomain, "subdomain", "", "subdomain: subdomain name")
+		c.Fs.StringVar(&c.Subdomain, "u", "", "subdomain: subdomain name")
+		c.Fs.StringVar(&c.Domain, "domain", "megam.co", "domain: domain name, this needs to preexist in the DNS service. Default : megam.co")
+		c.Fs.StringVar(&c.Domain, "d", "megam.co", "domain: domain name, this needs to preexist in the DNS service")
+		c.Fs.StringVar(&c.Ip, "ipaddress", "", "ipaddress: ipaddress of the running server")
+		c.Fs.StringVar(&c.Ip, "i", "", "ipaddress: ipaddress of the running server")
 	}
-	return c.fs
+	return c.Fs
 }
 
 type DeleteSubdomain struct {
@@ -208,7 +250,7 @@ func findRecord(records route53.ResourceRecordSets, subdomain string, hosted_zon
 	return rrs
 }
 
-func updateRecord(zone route53.HostedZone, aws route53.AccessIdentifiers, action string, name string, value string) {
+func updateRecord(zone route53.HostedZone, aws route53.AccessIdentifiers, action string, name string, value string) error {
 	var create = route53.ChangeResourceRecordSetsRequest{
 		ZoneID:  zone.HostedZoneId(),
 		Comment: "",
@@ -227,5 +269,8 @@ func updateRecord(zone route53.HostedZone, aws route53.AccessIdentifiers, action
 
 	if err != nil {
 		log.Fatal("Update record failed:", r, err)
+		return err
 	}
+	
+	return nil
 }
